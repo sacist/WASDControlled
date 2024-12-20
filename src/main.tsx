@@ -4,7 +4,7 @@ import { WasdControlled } from './app'
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <WasdControlled speed={2}>
-      Какая то картинка мб
+        
     </WasdControlled>
   </StrictMode>
 )

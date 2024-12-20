@@ -1,54 +1,63 @@
 import styled from "styled-components";
-import { useState } from "react";
+import { ReactElement, useState,useRef,useEffect } from "react";
 import { useEventListener } from "./useEventListener";
 type WasdControlledProps = {
   speed?: number,
-  children?: any
+  children?: ReactElement
 };
-export const WasdControlled = ({ speed,children }: WasdControlledProps) => {
-  const [position,setPosition]=useState({x:400,y:400})
-  const [activeInterval,setActiveInterval]=useState<Record<string,number>>({})
-  const userSpeed=speed || 1
-  const move=(key:string) => {
+type MovementKeys = 'w' | 'a' | 's' | 'd';
+type ActiveIntervals = { [K in MovementKeys]?: number };
+export const WasdControlled = ({ speed, children }: WasdControlledProps) => {
+  const [position, setPosition] = useState<{x:number,y:number}>({ x: 400, y: 400 })
+  const activeIntervals = useRef<ActiveIntervals>({});
+
+
+  const userSpeed = speed || 1
+  const move = (key: string) => {
     switch (key) {
       case 'w':
-        setPosition((prev)=>({...prev,y:prev.y-userSpeed}))
+        setPosition((prev) => ({ ...prev, y: prev.y - userSpeed }))
         break;
       case 'a':
-        setPosition((prev)=>({...prev,x:prev.x-userSpeed}))
+        setPosition((prev) => ({ ...prev, x: prev.x - userSpeed }))
         break;
       case 's':
-        setPosition((prev)=>({...prev,y:prev.y+userSpeed}))
+        setPosition((prev) => ({ ...prev, y: prev.y + userSpeed }))
         break;
       case 'd':
-        setPosition((prev)=>({...prev,x:prev.x+userSpeed}))
+        setPosition((prev) => ({ ...prev, x: prev.x + userSpeed }))
         break;
     }
   }
-  const HandleKeyDown=(e:KeyboardEvent) => {
-    if(e.repeat || activeInterval[e.key])return
+  const HandleKeyDown = (e: KeyboardEvent) => {
+    if (e.repeat || activeIntervals.current[e.key as MovementKeys]) return
 
-    if(['w','a','s','d'].includes(e.key)){
-      const intervalId=setInterval(()=>{
-        move(e.key)
-      },1000/120)
-      setActiveInterval((prev)=>({...prev,[e.key]:intervalId}))
+    if (['w', 'a', 's', 'd'].includes(e.key)) {
+      if (!activeIntervals.current[e.key as MovementKeys]) {
+        const intervalId = setInterval(() => {
+          move(e.key);
+        }, 1000 / 120);
+        activeIntervals.current[e.key as MovementKeys] = intervalId;
+    }
+  }}
+  const HandleKeyUp = (e: KeyboardEvent) => {
+    if (activeIntervals.current[e.key as MovementKeys]) {
+      clearInterval(activeIntervals.current[e.key as MovementKeys])
+      delete activeIntervals.current[e.key as MovementKeys]      
     }
   }
-  const HandleKeyUp=(e:KeyboardEvent)=>{
-    if(activeInterval[e.key]){
-      clearInterval(activeInterval[e.key])
-      setActiveInterval((prev)=>{
-        const newObj=prev
-        delete newObj[e.key]
-        return newObj
-      })
-    }
-  }
-  useEventListener('keydown',HandleKeyDown)
-  useEventListener('keyup',HandleKeyUp)
+  useEventListener('keydown', HandleKeyDown)
+  useEventListener('keyup', HandleKeyUp)
+
+  useEffect(() => {
+    return () => {
+      Object.values(activeIntervals.current).forEach(clearInterval);
+      activeIntervals.current = {};
+    };
+  }, []);
+  
   return (
-    <WasdDivWrapper style={{left:`${position.x}px`,top:`${position.y}px`}}>
+    <WasdDivWrapper style={{ left: `${position.x}px`, top: `${position.y}px` }}>
       {children}
     </WasdDivWrapper>
   )
