@@ -7,28 +7,27 @@ type WasdControlledProps = {
 };
 type MovementKeys = 'w' | 'a' | 's' | 'd';
 type ActiveIntervals = { [K in MovementKeys]?: number };
-export const WasdControlled = ({ speed, children }: WasdControlledProps) => {
+export const WasdControlled = ({ speed=1, children }: WasdControlledProps) => {
   const [position, setPosition] = useState<{x:number,y:number}>({ x: 400, y: 400 })
   const activeIntervals = useRef<ActiveIntervals>({});
 
-
-  const userSpeed = speed || 1
   const move = (key: string) => {
     switch (key) {
       case 'w':
-        setPosition((prev) => ({ ...prev, y: prev.y - userSpeed }))
+        setPosition((prev) => ({ ...prev, y: prev.y - speed }))
         break;
       case 'a':
-        setPosition((prev) => ({ ...prev, x: prev.x - userSpeed }))
+        setPosition((prev) => ({ ...prev, x: prev.x - speed }))
         break;
       case 's':
-        setPosition((prev) => ({ ...prev, y: prev.y + userSpeed }))
+        setPosition((prev) => ({ ...prev, y: prev.y + speed }))
         break;
       case 'd':
-        setPosition((prev) => ({ ...prev, x: prev.x + userSpeed }))
+        setPosition((prev) => ({ ...prev, x: prev.x + speed }))
         break;
     }
   }
+
   const HandleKeyDown = (e: KeyboardEvent) => {
     if (e.repeat || activeIntervals.current[e.key as MovementKeys]) return
 
@@ -40,19 +39,20 @@ export const WasdControlled = ({ speed, children }: WasdControlledProps) => {
         activeIntervals.current[e.key as MovementKeys] = intervalId;
     }
   }}
+
   const HandleKeyUp = (e: KeyboardEvent) => {
     if (activeIntervals.current[e.key as MovementKeys]) {
       clearInterval(activeIntervals.current[e.key as MovementKeys])
       delete activeIntervals.current[e.key as MovementKeys]      
     }
   }
+  
   useEventListener('keydown', HandleKeyDown)
   useEventListener('keyup', HandleKeyUp)
 
   useEffect(() => {
     return () => {
       Object.values(activeIntervals.current).forEach(clearInterval);
-      activeIntervals.current = {};
     };
   }, []);
   
